@@ -191,7 +191,6 @@ public
 *.jpeg
 *.gif
 *.bmp
-*.svg
 *.webp
 *.mp4
 *.avi
@@ -203,6 +202,10 @@ public
 *.zip
 *.tar.gz
 *.rar
+
+# SVG files are often small UI assets - allow them by default
+# Exception: ignore very large SVG files (>100KB)
+*.svg.large
 
 # Keep small icons and UI assets
 !/assets/icons/
