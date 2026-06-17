@@ -6,6 +6,7 @@ import multer from "multer";
 import path from "node:path";
 import { sendAdminNotificationEmail } from "../lib/mailer.js";
 import { uploadToSupabase } from "../lib/supabase-storage.js";
+import { getAdminId, signAdminToken } from "../lib/admin-auth.js";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -33,31 +34,39 @@ router.post("/login", async (req, res) => {
     if (hashPassword(password) !== admin.passwordHash) {
       return res.status(401).json({ error: "invalid_credentials", message: "Invalid email or password" });
     }
-    (req.session as Record<string, unknown>).adminId = admin.id;
-    res.json({ success: true, admin: formatAdmin(admin) });
+    (req.session as any).adminId = admin.id;
+    const token = signAdminToken(admin.id);
+    return req.session.save((err) => {
+      if (err) {
+        req.log.error({ err }, "Failed to save session");
+        res.status(500).json({ error: "internal_error", message: "Login failed" });
+        return;
+      }
+      res.json({ success: true, admin: formatAdmin(admin), token });
+    });
   } catch (err) {
     req.log.error({ err }, "Failed to login");
-    res.status(500).json({ error: "internal_error", message: "Login failed" });
+    return res.status(500).json({ error: "internal_error", message: "Login failed" });
   }
 });
 
 router.post("/logout", (req, res) => {
   req.session.destroy((err) => {
     if (err) req.log.error({ err }, "Failed to destroy session");
-    res.json({ success: true, message: "Logged out" });
+    return res.json({ success: true, message: "Logged out" });
   });
 });
 
 router.get("/me", async (req, res) => {
   try {
-    const adminId = (req.session as Record<string, unknown>).adminId as number | undefined;
+    const adminId = getAdminId(req);
     if (!adminId) return res.status(401).json({ error: "unauthorized", message: "Not authenticated" });
     const [admin] = await db.select().from(adminProfileTable).where(eq(adminProfileTable.id, adminId));
     if (!admin) return res.status(401).json({ error: "unauthorized", message: "Admin not found" });
-    res.json(formatAdmin(admin));
+    return res.json(formatAdmin(admin));
   } catch (err) {
     req.log.error({ err }, "Failed to get admin me");
-    res.status(500).json({ error: "internal_error", message: "Failed to get admin" });
+    return res.status(500).json({ error: "internal_error", message: "Failed to get admin" });
   }
 });
 
@@ -65,16 +74,16 @@ router.get("/profile", async (req, res) => {
   try {
     const [admin] = await db.select().from(adminProfileTable).limit(1);
     if (!admin) return res.status(404).json({ error: "not_found", message: "Admin profile not found" });
-    res.json(formatAdmin(admin));
+    return res.json(formatAdmin(admin));
   } catch (err) {
     req.log.error({ err }, "Failed to get admin profile");
-    res.status(500).json({ error: "internal_error", message: "Failed to fetch admin profile" });
+    return res.status(500).json({ error: "internal_error", message: "Failed to fetch admin profile" });
   }
 });
 
 router.put("/profile", async (req, res) => {
   try {
-    const adminId = (req.session as Record<string, unknown>).adminId as number | undefined;
+    const adminId = getAdminId(req);
     if (!adminId) return res.status(401).json({ error: "unauthorized", message: "Not authenticated" });
 
     const {
@@ -102,17 +111,17 @@ router.put("/profile", async (req, res) => {
 
     const [admin] = await db.update(adminProfileTable).set(updateData).where(eq(adminProfileTable.id, adminId)).returning();
     if (!admin) return res.status(404).json({ error: "not_found", message: "Admin profile not found" });
-    res.json(formatAdmin(admin));
+    return res.json(formatAdmin(admin));
   } catch (err) {
     req.log.error({ err }, "Failed to update admin profile");
-    res.status(500).json({ error: "internal_error", message: "Failed to update admin profile" });
+    return res.status(500).json({ error: "internal_error", message: "Failed to update admin profile" });
   }
 });
 
 // Upload hero image as a file → Supabase Storage
 router.post("/upload-hero", upload.single("image"), async (req, res) => {
   try {
-    const adminId = (req.session as Record<string, unknown>).adminId as number | undefined;
+    const adminId = getAdminId(req);
     if (!adminId) return res.status(401).json({ error: "unauthorized", message: "Not authenticated" });
     if (!req.file) return res.status(400).json({ error: "no_file", message: "No image file provided" });
 
@@ -122,17 +131,17 @@ router.post("/upload-hero", upload.single("image"), async (req, res) => {
 
     await db.update(adminProfileTable).set({ heroImage: imageUrl, updatedAt: new Date() }).where(eq(adminProfileTable.id, adminId));
 
-    res.json({ success: true, url: imageUrl });
+    return res.json({ success: true, url: imageUrl });
   } catch (err) {
     req.log.error({ err }, "Failed to upload hero image");
-    res.status(500).json({ error: "internal_error", message: "Failed to upload image" });
+    return res.status(500).json({ error: "internal_error", message: "Failed to upload image" });
   }
 });
 
 // Send a test email
 router.post("/test-email", async (req, res) => {
   try {
-    const adminId = (req.session as Record<string, unknown>).adminId as number | undefined;
+    const adminId = getAdminId(req);
     if (!adminId) return res.status(401).json({ error: "unauthorized", message: "Not authenticated" });
 
     await sendAdminNotificationEmail(
@@ -145,10 +154,10 @@ router.post("/test-email", async (req, res) => {
       </div>`
     );
 
-    res.json({ success: true, message: "Test email sent successfully" });
+    return res.json({ success: true, message: "Test email sent successfully" });
   } catch (err) {
     req.log.error({ err }, "Failed to send test email");
-    res.status(500).json({ error: "email_error", message: String(err) });
+    return res.status(500).json({ error: "email_error", message: String(err) });
   }
 });
 

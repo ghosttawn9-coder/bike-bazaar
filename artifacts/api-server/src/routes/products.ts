@@ -105,10 +105,10 @@ router.get("/:id", async (req, res) => {
     const [product] = await db.select().from(productsTable).where(eq(productsTable.id, id));
     if (!product) return res.status(404).json({ error: "not_found", message: "Product not found" });
 
-    res.json(formatProduct(product));
+    return res.json(formatProduct(product));
   } catch (err) {
     req.log.error({ err }, "Failed to get product");
-    res.status(500).json({ error: "internal_error", message: "Failed to fetch product" });
+    return res.status(500).json({ error: "internal_error", message: "Failed to fetch product" });
   }
 });
 
@@ -125,10 +125,10 @@ router.get("/:id/related", async (req, res) => {
       .orderBy(sql`RANDOM()`)
       .limit(4);
 
-    res.json(related.map(formatProduct));
+    return res.json(related.map(formatProduct));
   } catch (err) {
     req.log.error({ err }, "Failed to get related products");
-    res.status(500).json({ error: "internal_error", message: "Failed to fetch related products" });
+    return res.status(500).json({ error: "internal_error", message: "Failed to fetch related products" });
   }
 });
 
@@ -154,10 +154,10 @@ router.post("/", async (req, res) => {
       specs: specs ?? {},
     }).returning();
 
-    res.status(201).json(formatProduct(product));
+    return res.status(201).json(formatProduct(product));
   } catch (err) {
     req.log.error({ err }, "Failed to create product");
-    res.status(500).json({ error: "internal_error", message: "Failed to create product" });
+    return res.status(500).json({ error: "internal_error", message: "Failed to create product" });
   }
 });
 
@@ -187,10 +187,10 @@ router.put("/:id", async (req, res) => {
     const [product] = await db.update(productsTable).set(updateData).where(eq(productsTable.id, id)).returning();
     if (!product) return res.status(404).json({ error: "not_found", message: "Product not found" });
 
-    res.json(formatProduct(product));
+    return res.json(formatProduct(product));
   } catch (err) {
     req.log.error({ err }, "Failed to update product");
-    res.status(500).json({ error: "internal_error", message: "Failed to update product" });
+    return res.status(500).json({ error: "internal_error", message: "Failed to update product" });
   }
 });
 
@@ -202,10 +202,10 @@ router.delete("/:id", async (req, res) => {
     const [deleted] = await db.delete(productsTable).where(eq(productsTable.id, id)).returning();
     if (!deleted) return res.status(404).json({ error: "not_found", message: "Product not found" });
 
-    res.json({ success: true, message: "Product deleted" });
+    return res.json({ success: true, message: "Product deleted" });
   } catch (err) {
     req.log.error({ err }, "Failed to delete product");
-    res.status(500).json({ error: "internal_error", message: "Failed to delete product" });
+    return res.status(500).json({ error: "internal_error", message: "Failed to delete product" });
   }
 });
 
@@ -235,10 +235,10 @@ router.post("/upload-image", upload.single("image"), async (req, res) => {
     const ext = path.extname(req.file.originalname);
     const filename = `products/product-${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`;
     const imageUrl = await uploadToSupabase(req.file.buffer, filename, req.file.mimetype);
-    res.json({ success: true, url: imageUrl });
+    return res.json({ success: true, url: imageUrl });
   } catch (err) {
     req.log.error({ err }, "Failed to upload product image");
-    res.status(500).json({ error: "internal_error", message: "Failed to upload image" });
+    return res.status(500).json({ error: "internal_error", message: "Failed to upload image" });
   }
 });
 

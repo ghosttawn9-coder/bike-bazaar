@@ -759,9 +759,13 @@ components:
           type: boolean
         admin:
           $ref: "#/components/schemas/AdminProfile"
+        token:
+          type: string
+          description: Bearer token for cross-origin admin auth (use when session cookies are blocked)
       required:
         - success
         - admin
+        - token
 
     DashboardStats:
       type: object

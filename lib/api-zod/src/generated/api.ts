@@ -468,6 +468,11 @@ export const AdminLoginResponse = zod.object({
       .optional(),
     whatsappNumber: zod.string().optional(),
   }),
+  token: zod
+    .string()
+    .describe(
+      "Bearer token for cross-origin admin auth (use when session cookies are blocked)",
+    ),
 });
 
 /**

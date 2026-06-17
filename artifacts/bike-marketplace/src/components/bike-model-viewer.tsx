@@ -5,7 +5,7 @@ import { motion, useMotionValue, useTransform } from "framer-motion";
 
 function Model({ url }: { url: string }) {
   const { scene } = useGLTF(url);
-  const ref = useRef<any>();
+  const ref = useRef<any>(null);
   
   useFrame((state) => {
     const t = state.clock.getElapsedTime();

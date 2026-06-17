@@ -10,4 +10,6 @@ import type { AdminProfile } from "./adminProfile";
 export interface AdminLoginResponse {
   success: boolean;
   admin: AdminProfile;
+  /** Bearer token for cross-origin admin auth (use when session cookies are blocked) */
+  token: string;
 }

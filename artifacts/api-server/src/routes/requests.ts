@@ -51,10 +51,10 @@ router.post("/", async (req, res) => {
       </div>`
     ).catch(() => {/* ignore email errors so the request still saves */});
 
-    res.status(201).json(formatRequest(request));
+    return res.status(201).json(formatRequest(request));
   } catch (err) {
     req.log.error({ err }, "Failed to create request");
-    res.status(500).json({ error: "internal_error", message: "Failed to create request" });
+    return res.status(500).json({ error: "internal_error", message: "Failed to create request" });
   }
 });
 
@@ -64,10 +64,10 @@ router.get("/:id", async (req, res) => {
     if (isNaN(id)) return res.status(400).json({ error: "invalid_id", message: "Invalid request ID" });
     const [request] = await db.select().from(requestsTable).where(eq(requestsTable.id, id));
     if (!request) return res.status(404).json({ error: "not_found", message: "Request not found" });
-    res.json(formatRequest(request));
+    return res.json(formatRequest(request));
   } catch (err) {
     req.log.error({ err }, "Failed to get request");
-    res.status(500).json({ error: "internal_error", message: "Failed to fetch request" });
+    return res.status(500).json({ error: "internal_error", message: "Failed to fetch request" });
   }
 });
 
@@ -83,10 +83,10 @@ router.patch("/:id", async (req, res) => {
     }
     const [request] = await db.update(requestsTable).set({ status }).where(eq(requestsTable.id, id)).returning();
     if (!request) return res.status(404).json({ error: "not_found", message: "Request not found" });
-    res.json(formatRequest(request));
+    return res.json(formatRequest(request));
   } catch (err) {
     req.log.error({ err }, "Failed to update request");
-    res.status(500).json({ error: "internal_error", message: "Failed to update request" });
+    return res.status(500).json({ error: "internal_error", message: "Failed to update request" });
   }
 });
 
@@ -96,10 +96,10 @@ router.delete("/:id", async (req, res) => {
     if (isNaN(id)) return res.status(400).json({ error: "invalid_id", message: "Invalid request ID" });
     const [deleted] = await db.delete(requestsTable).where(eq(requestsTable.id, id)).returning();
     if (!deleted) return res.status(404).json({ error: "not_found", message: "Request not found" });
-    res.json({ success: true, message: "Request deleted" });
+    return res.json({ success: true, message: "Request deleted" });
   } catch (err) {
     req.log.error({ err }, "Failed to delete request");
-    res.status(500).json({ error: "internal_error", message: "Failed to delete request" });
+    return res.status(500).json({ error: "internal_error", message: "Failed to delete request" });
   }
 });
 
