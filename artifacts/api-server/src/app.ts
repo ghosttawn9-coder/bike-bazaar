@@ -32,7 +32,7 @@ app.use(
 );
 
 app.use(cors({
-  origin: true,
+  origin: process.env.CONS_URL || true,
   credentials: true,
 }));
 
